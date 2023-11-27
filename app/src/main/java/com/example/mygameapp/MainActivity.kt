@@ -7,12 +7,18 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material3.Card
@@ -31,8 +37,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -90,17 +99,21 @@ fun MyScreenContent() {
             )
         }
     ) { innerPadding ->
-        // Aquí iría tu contenido, por ejemplo, una columna con listas desplazables
         Column(modifier = Modifier.padding(innerPadding)) {
             // Aquí puedes decidir qué contenido mostrar basado en la ruta seleccionada
             when (selectedRoute) {
                 "Home" -> {
                     HeaderSection("Hot Games")
-                    GameList(hotGames) // 'hotGames' sería una lista de datos de juegos
+                    GameList(
+                        hotGames,
+                        orientation = Orientation.Horizontal
+                    ) // Usar la lista horizontal para "Hot Games"
                 }
+
                 "Search" -> {
                     // Contenido para la búsqueda
                 }
+
                 "Profile" -> {
                     // Contenido para el perfil
                 }
@@ -112,15 +125,6 @@ fun MyScreenContent() {
         }
     }
 }
-
-
-/*
-@Composable
-fun HeaderSection(title: String) {
-    // Componente para el encabezado de cada sección
-    Text(text = title)
-}
-*/
 
 @Composable
 fun HeaderSection(title: String) {
@@ -137,55 +141,100 @@ fun HeaderSection(title: String) {
     }
 }
 
-
 @Composable
-fun GameList(games: List<Game>) {
-    // Lista desplazable de juegos
-    LazyColumn {
-        items(games) { game ->
-            GameItem(game)
+fun GameList(games: List<Game>, orientation: Orientation = Orientation.Vertical) {
+    when (orientation) {
+        Orientation.Vertical -> {
+            LazyColumn {
+                items(games) { game ->
+                    GameItem(game)
+                }
+            }
         }
-    }
-}
 
-/*@Composable
-fun GameItem(game: Game) {
-    Card {
-        Column {
-            // Imaginemos que usamos la librería Coil para cargar la imagen del juego
-            Image(
-                painter = rememberImagePainter(game.imageUrl),
-                contentDescription = "Game Image"
-            )
-            Text(text = game.title)
-            Text(text = "Rating: ${game.rating}")
-            Text(text = "Release Date: ${game.releaseDate}")
-            // Para mostrar los géneros
-            Row {
-                game.genre.forEach { genre ->
-                    Chip(label = genre)
+        Orientation.Horizontal -> {
+            LazyRow {
+                items(games) { game ->
+                    HotGameItem(game)
                 }
             }
         }
     }
-}*/
+}
+
+enum class Orientation {
+    Horizontal,
+    Vertical
+}
+
+// Actualización del composable GameItem para manejar la orientación horizontal
+@Composable
+fun HotGameItem(game: Game) {
+    Card(
+        modifier = Modifier
+            .width(200.dp)
+            //.height(300.dp)
+            .padding(8.dp)
+            .clip(RoundedCornerShape(8.dp)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,// Centra horizontalmente los hijos de la columna
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp)) // Esto asegura que todo el contenido dentro siga las esquinas redondeadas de la Card
+
+        ) {
+            Image(
+                painter = rememberImagePainter(game.imageUrl),
+                contentDescription = "Game Image",
+                modifier = Modifier
+                    .aspectRatio(0.75f) // Ajusta la relación de aspecto para que la imagen sea más larga (menos ancho en comparación con la altura)
+                    .clip(RoundedCornerShape(8.dp)), // Aplica esquinas redondeadas
+                contentScale = ContentScale.Crop // Asegúrate de que la imagen se recorte para mantener la relación de aspecto
+            )
+
+
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = game.title,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(horizontal = 8.dp)
+            )
+            RatingBar(game.rating)
+        }
+    }
+}
+
 
 @Composable
 fun GameItem(game: Game) {
     Card(
-        modifier = Modifier.padding(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp) // Usa CardDefaults para Material3
+        modifier = Modifier
+            .padding(8.dp)
+            .clip(RoundedCornerShape(10.dp)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)// Usa CardDefaults para Material3
     ) {
         Row(modifier = Modifier.fillMaxWidth()) { // Usa Row para imagen a la izquierda y texto a la derecha
             Image(
                 painter = rememberImagePainter(game.imageUrl),
                 contentDescription = "Game Image",
-                modifier = Modifier.size(100.dp) // Establece un tamaño fijo para las imágenes
+                modifier = Modifier
+                    //.size(100.dp) // Establece un tamaño fijo para las imágenes
+                    .width(100.dp) // Mantiene un ancho fijo
+                    .aspectRatio(0.75f) // Ajusta la relación de aspecto para que la imagen sea más larga (menos ancho en comparación con la altura)
+                    .clip(RoundedCornerShape(8.dp)), // Aplica esquinas redondeadas
+                contentScale = ContentScale.Crop // Asegúrate de que la imagen se recorte para mantener la relación de aspecto
+
             )
             Column(modifier = Modifier.padding(8.dp)) { // Agrega espacio dentro de la columna
                 Text(
                     text = game.title,
-                    style = MaterialTheme.typography.headlineMedium, // Usa un estilo más prominente para el título
+                    style = MaterialTheme.typography.bodyLarge, // Usa un estilo más prominente para el título
                     fontWeight = FontWeight.Bold // Hace el título en negrita
                 )
                 RatingBar(rating = game.rating) // Crea una barra de calificación con estrellas
@@ -200,6 +249,7 @@ fun GameItem(game: Game) {
         }
     }
 }
+
 @Composable
 fun RatingBar(rating: Float) {
     Row {
@@ -207,18 +257,11 @@ fun RatingBar(rating: Float) {
             Icon(
                 Icons.Filled.Star,
                 contentDescription = "Star",
-                tint = Color.Yellow // Usa el color amarillo para las estrellas
+                tint = Color.Red // Usa el color amarillo para las estrellas
             )
         }
     }
 }
-
-/*
-@Composable
-fun Chip(label: String) {
-    // Puedes diseñar este componente para que se vea como un chip de género de juego
-    Text(text = label)
-}*/
 
 @Composable
 fun Chip(label: String) {
@@ -229,7 +272,10 @@ fun Chip(label: String) {
     ) {
         Text(
             text = label,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), // Espaciado interno para el texto del chip
+            modifier = Modifier.padding(
+                horizontal = 8.dp,
+                vertical = 4.dp
+            ), // Espaciado interno para el texto del chip
             color = MaterialTheme.colorScheme.onSecondary // El color del texto debe contrastar con el fondo del chip
         )
     }
@@ -241,18 +287,59 @@ val hotGames = listOf(
     Game(
         title = "Alan Wake 2",
         rating = 4.8f,
-        imageUrl = "url_to_alan_wake_2_image",
+        imageUrl = "https://upload.wikimedia.org/wikipedia/en/e/ed/Alan_Wake_2_box_art.jpg",
         releaseDate = "15 March 2023",
         genre = listOf("Action", "Adventure")
     ),
     Game(
         title = "Lethal Company",
         rating = 4.5f,
-        imageUrl = "url_to_lethal_company_image",
+        imageUrl = "https://cdn.mobygames.com/covers/17819820-lethal-company-windows-front-cover.jpg",
         releaseDate = "29 August 2023",
         genre = listOf("Strategy", "RPG")
     ),
-    // ...agregar más juegos según sea necesario
+    Game(
+        title = "Red Dead Redemption 2",
+        rating = 4.9f,
+        imageUrl = "https://cdn.mobygames.com/covers/11283278-red-dead-redemption-ii-xbox-one-front-cover.jpg",
+        releaseDate = "26 October 2018",
+        genre = listOf("Action", "Adventure")
+    ),
+    Game(
+        title = "Destiny 2",
+        rating = 4.0f,
+        imageUrl = "https://cdn.mobygames.com/covers/2874038-destiny-2-playstation-4-front-cover.jpg",
+        releaseDate = "06 September 2017",
+        genre = listOf("Action", "Shooter")
+    ),
+    Game(
+        title = "The Witcher 3: Wild Hunt",
+        rating = 4.9f,
+        imageUrl = "https://cdn.mobygames.com/covers/11286309-the-witcher-3-wild-hunt-complete-edition-xbox-one-front-cover.jpg",
+        releaseDate = "19 May 2015",
+        genre = listOf("Action", "RPG")
+    ),
+    Game(
+        title = "Cyberpunk 2077",
+        rating = 4.0f,
+        imageUrl = "https://cdn.mobygames.com/covers/9848314-cyberpunk-2077-windows-front-cover.jpg",
+        releaseDate = "10 December 2020",
+        genre = listOf("Action", "RPG")
+    ),
+    Game(
+        title = "Grand Theft Auto V",
+        rating = 4.8f,
+        imageUrl = "https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V.png",
+        releaseDate = "17 September 2013",
+        genre = listOf("Action", "Adventure")
+    ),
+    Game(
+        title = "Minecraft",
+        rating = 4.7f,
+        imageUrl = "https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_cover.png",
+        releaseDate = "18 November 2011",
+        genre = listOf("Sandbox", "Survival")
+    )
 )
 
 // Definir una lista de juegos para "Popular Games"
@@ -260,18 +347,45 @@ val popularGames = listOf(
     Game(
         title = "Red Dead Redemption 2",
         rating = 4.9f,
-        imageUrl = "url_to_red_dead_redemption_2_image",
+        imageUrl = "https://cdn.mobygames.com/covers/11283278-red-dead-redemption-ii-xbox-one-front-cover.jpg",
         releaseDate = "26 October 2018",
         genre = listOf("Action", "Adventure")
     ),
     Game(
         title = "Destiny 2",
         rating = 4.0f,
-        imageUrl = "url_to_destiny_2_image",
+        imageUrl = "https://cdn.mobygames.com/covers/2874038-destiny-2-playstation-4-front-cover.jpg",
         releaseDate = "06 September 2017",
         genre = listOf("Action", "Shooter")
     ),
-    // ...agregar más juegos según sea necesario
+    Game(
+        title = "The Witcher 3: Wild Hunt",
+        rating = 4.9f,
+        imageUrl = "https://cdn.mobygames.com/covers/11286309-the-witcher-3-wild-hunt-complete-edition-xbox-one-front-cover.jpg",
+        releaseDate = "19 May 2015",
+        genre = listOf("Action", "RPG")
+    ),
+    Game(
+        title = "Cyberpunk 2077",
+        rating = 4.0f,
+        imageUrl = "https://cdn.mobygames.com/covers/9848314-cyberpunk-2077-windows-front-cover.jpg",
+        releaseDate = "10 December 2020",
+        genre = listOf("Action", "RPG")
+    ),
+    Game(
+        title = "Grand Theft Auto V",
+        rating = 4.8f,
+        imageUrl = "https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V.png",
+        releaseDate = "17 September 2013",
+        genre = listOf("Action", "Adventure")
+    ),
+    Game(
+        title = "Minecraft",
+        rating = 4.7f,
+        imageUrl = "https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_cover.png",
+        releaseDate = "18 November 2011",
+        genre = listOf("Sandbox", "Survival")
+    )
 )
 
 // Modelo de datos para un juego
@@ -285,7 +399,10 @@ data class Game(
 
 @Composable
 fun MyBottomNavigationBar(selectedRoute: String, onItemSelect: (String) -> Unit) {
-    BottomNavigation {
+    BottomNavigation(
+        backgroundColor = Color.White, // Fondo oscuro para la navegación
+        contentColor = Color.Black
+    ) {
         BottomNavigationItem(
             icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
             label = { Text("Home") },
